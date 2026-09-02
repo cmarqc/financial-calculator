@@ -1,4 +1,4 @@
-# Financial Freedom Calculator
+# (Financial) Freedom Rings!
 
 A local-only web app for planning savings goals, checking retirement/FIRE progress, and
 scoring net worth. No accounts, no database, no server-side APIs — everything runs and stays

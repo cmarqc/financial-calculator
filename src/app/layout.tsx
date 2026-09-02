@@ -7,7 +7,7 @@ import { SettingsProvider } from '@/lib/settings-context';
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter', display: 'swap' });
 
 export const metadata: Metadata = {
-  title: 'Financial Freedom Calculator',
+  title: '(Financial) Freedom Rings!',
   description:
     'Plan savings goals, check retirement and FIRE progress, and score your net worth — entirely in your browser.',
 };
