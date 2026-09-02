@@ -86,6 +86,32 @@ export function projectedValue(principal: number, annualReturnPct: number, years
   return principal * Math.pow(1 + r, years);
 }
 
+// Same as projectedValue, but adds the future value of an ongoing monthly contribution
+// (compounded monthly, contributed at the start of each month) on top of the existing
+// balance's growth.
+export function projectedValueWithContributions(
+  principal: number,
+  monthlyContribution: number,
+  annualReturnPct: number,
+  years: number,
+): number {
+  if (!Number.isFinite(principal) || principal < 0) principal = 0;
+  if (!Number.isFinite(monthlyContribution) || monthlyContribution < 0) monthlyContribution = 0;
+  if (years <= 0) return principal;
+  if (monthlyContribution === 0) return projectedValue(principal, annualReturnPct, years);
+
+  const monthlyRate = annualReturnPct / 100 / 12;
+  const months = years * 12;
+
+  if (monthlyRate === 0) return principal + monthlyContribution * months;
+
+  const futureValueOfPrincipal = principal * Math.pow(1 + monthlyRate, months);
+  const futureValueOfContributions =
+    monthlyContribution * (((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * (1 + monthlyRate));
+
+  return futureValueOfPrincipal + futureValueOfContributions;
+}
+
 export interface RetirementCheckInput {
   outcome: RetirementOutcome;
   currentAge: number;
@@ -94,6 +120,9 @@ export interface RetirementCheckInput {
   netWorth: number;
   annualSpend: number;
   annualReturnPct: number;
+  // Ongoing monthly contribution assumed only up to targetAge — a Coast FIRE check still
+  // assumes no further contributions between targetAge and retirementAge, by definition.
+  monthlyContribution?: number;
 }
 
 export interface RetirementCheckResult {
@@ -105,12 +134,12 @@ export interface RetirementCheckResult {
 }
 
 export function checkRetirementProgress(input: RetirementCheckInput): RetirementCheckResult {
-  const { outcome, currentAge, targetAge, retirementAge, netWorth, annualSpend, annualReturnPct } = input;
+  const { outcome, currentAge, targetAge, retirementAge, netWorth, annualSpend, annualReturnPct, monthlyContribution } = input;
   const yearsToTarget = Math.max(0, targetAge - currentAge);
   const required = fireNumber(annualSpend);
 
   let requiredAmount = required;
-  const projectedAmount = projectedValue(netWorth, annualReturnPct, yearsToTarget);
+  const projectedAmount = projectedValueWithContributions(netWorth, monthlyContribution ?? 0, annualReturnPct, yearsToTarget);
 
   if (outcome === 'coastFire') {
     const yearsFromTargetToRetirement = Math.max(0, retirementAge - targetAge);

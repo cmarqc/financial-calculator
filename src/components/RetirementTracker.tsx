@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { Card } from '@/components/Card';
-import { CurrencyField, NumberField, SegmentedField } from '@/components/fields';
+import { CheckboxField, CurrencyField, NumberField, SegmentedField } from '@/components/fields';
 import { useSettings } from '@/lib/settings-context';
 import { formatCurrency } from '@/lib/format';
 import { checkRetirementProgress, type RetirementOutcome } from '@/lib/calculations';
@@ -29,6 +29,8 @@ export function RetirementTracker() {
   const [netWorth, setNetWorth] = useState(50000);
   const [annualSpend, setAnnualSpend] = useState(50000);
   const [returnPct, setReturnPct] = useState(7);
+  const [continueContributing, setContinueContributing] = useState(false);
+  const [monthlyContribution, setMonthlyContribution] = useState(500);
 
   const result = useMemo(
     () =>
@@ -40,8 +42,9 @@ export function RetirementTracker() {
         netWorth,
         annualSpend,
         annualReturnPct: returnPct,
+        monthlyContribution: continueContributing ? monthlyContribution : 0,
       }),
-    [outcome, currentAge, targetAge, retirementAge, netWorth, annualSpend, returnPct],
+    [outcome, currentAge, targetAge, retirementAge, netWorth, annualSpend, returnPct, continueContributing, monthlyContribution],
   );
 
   return (
@@ -109,6 +112,25 @@ export function RetirementTracker() {
           step={0.1}
           suffix="%"
         />
+
+        <CheckboxField
+          id="continue-contributing"
+          label="Continue contributing"
+          checked={continueContributing}
+          onChange={setContinueContributing}
+          tooltip={`Factor in ongoing monthly contributions from now until age ${targetAge}, on top of your current net worth growing. ${
+            outcome === 'coastFire' ? 'Contributions still stop once you reach coast status, as usual.' : ''
+          }`}
+        />
+        {continueContributing && (
+          <CurrencyField
+            id="monthly-contribution"
+            label="Monthly contribution"
+            value={monthlyContribution}
+            onChange={setMonthlyContribution}
+            currency={currency}
+          />
+        )}
       </div>
 
       <div className="flex flex-col gap-5 rounded-xl bg-[var(--bg-subtle)] p-5">
@@ -135,7 +157,12 @@ export function RetirementTracker() {
             <strong className="tabular-nums text-[var(--text)]">{formatCurrency(result.requiredAmount, currency)}</strong>
           </div>
           <div className="flex justify-between gap-3">
-            <span className="text-[var(--text-muted)]">Projected at age {targetAge}</span>
+            <span className="text-[var(--text-muted)]">
+              Projected at age {targetAge}
+              {continueContributing && (
+                <span className="block text-xs">+{formatCurrency(monthlyContribution, currency)}/mo assumed</span>
+              )}
+            </span>
             <strong className="tabular-nums text-[var(--text)]">{formatCurrency(result.projectedAmount, currency)}</strong>
           </div>
           <div className="flex justify-between gap-3 border-t border-[var(--border)] pt-3">

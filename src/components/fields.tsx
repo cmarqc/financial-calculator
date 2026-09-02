@@ -280,3 +280,31 @@ export function SelectField<T extends string>({
     </FieldShell>
   );
 }
+
+export function CheckboxField({
+  id,
+  label,
+  checked,
+  onChange,
+  tooltip,
+}: {
+  id: string;
+  label: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  tooltip?: string;
+}) {
+  return (
+    <label htmlFor={id} className="flex w-fit items-center gap-2 text-sm font-medium text-[var(--text)]">
+      <input
+        id={id}
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+        className="h-4 w-4 rounded border-[var(--border)] accent-[var(--accent)]"
+      />
+      {label}
+      {tooltip && <InfoTooltip label={`More info: ${label}`} text={tooltip} />}
+    </label>
+  );
+}
