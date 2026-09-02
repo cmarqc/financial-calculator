@@ -130,9 +130,12 @@ export function checkRetirementProgress(input: RetirementCheckInput): Retirement
 // Heuristic, informational-only scoring (no external benchmark data source is
 // available since the app runs fully locally with no database).
 
-export type Badge = 'bronze' | 'silver' | 'gold';
+export type Badge = 'bronze' | 'silver' | 'gold' | 'diamond';
 
 export function badgeFromScore(score: number): Badge {
+  // Compare against the same rounded percentile shown in the UI, so the badge
+  // and the "Nth percentile" text never disagree at the boundary.
+  if (percentileFromScore(score) >= 97) return 'diamond';
   if (score >= 7) return 'gold';
   if (score >= 4) return 'silver';
   return 'bronze';
