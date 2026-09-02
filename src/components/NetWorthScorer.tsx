@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Card } from '@/components/Card';
-import { CurrencyField, TextField } from '@/components/fields';
+import { CurrencyField, NumberField, TextField } from '@/components/fields';
 import { TierBadge } from '@/components/Badge';
 import { useSettings } from '@/lib/settings-context';
 import { formatCurrency, formatOrdinal } from '@/lib/format';
@@ -13,6 +13,7 @@ import {
   scoreLiabilityAccount,
   scoreNetWorth,
 } from '@/lib/calculations';
+import { NET_WORTH_DATA_NOTE } from '@/lib/netWorthBenchmarks';
 
 interface Account {
   id: string;
@@ -150,6 +151,7 @@ export function NetWorthScorer() {
   const { currency } = useSettings();
   const [assets, setAssets] = useState<Account[]>([makeAccount('Savings account', 'asset-default')]);
   const [liabilities, setLiabilities] = useState<Account[]>([makeAccount('Credit card', 'liability-default')]);
+  const [age, setAge] = useState(0);
   const [scored, setScored] = useState(false);
 
   const updateList = (
@@ -162,7 +164,7 @@ export function NetWorthScorer() {
   const totalAssets = assets.reduce((sum, a) => sum + (a.amount || 0), 0);
   const totalLiabilities = liabilities.reduce((sum, l) => sum + (l.amount || 0), 0);
   const netWorth = totalAssets - totalLiabilities;
-  const overallScore = scoreNetWorth(netWorth);
+  const overallScore = scoreNetWorth(netWorth, age > 0 ? age : null);
 
   return (
     <Card eyebrow="Net worth" title="Score your accounts">
@@ -189,7 +191,18 @@ export function NetWorthScorer() {
         />
       </div>
 
-      <div className="mt-6 flex justify-center">
+      <div className="mt-6 flex flex-col items-center gap-4">
+        <div className="w-full max-w-[200px]">
+          <NumberField
+            id="net-worth-age"
+            label="Your age (optional)"
+            value={age}
+            onChange={setAge}
+            min={0}
+            max={100}
+            tooltip={`Compares your net worth to others in your age bracket instead of all U.S. households. ${NET_WORTH_DATA_NOTE}`}
+          />
+        </div>
         <button
           type="button"
           onClick={() => setScored(true)}
@@ -209,10 +222,12 @@ export function NetWorthScorer() {
             <div className="flex items-center gap-3">
               <span className="text-sm text-[var(--text-muted)]">
                 Score {overallScore.toFixed(1)}/10 · {formatOrdinal(percentileFromScore(overallScore))} percentile
+                {age > 0 ? ` for age ${age}` : ' of all U.S. households'}
               </span>
               <TierBadge tier={badgeFromScore(overallScore)} />
             </div>
           </div>
+          <p className="-mt-4 text-xs text-[var(--text-muted)]">{NET_WORTH_DATA_NOTE}</p>
 
           <div className="grid gap-6 lg:grid-cols-2 lg:gap-0">
             <ScoreGroup
@@ -234,7 +249,8 @@ export function NetWorthScorer() {
           </div>
 
           <p className="text-xs text-[var(--text-muted)]">
-            Scores are simplified, informational estimates based on typical account sizes — not financial advice.
+            Individual account scores are simplified, informational estimates based on typical
+            account sizes, not real benchmark data — not financial advice.
           </p>
         </div>
       )}

@@ -1,3 +1,5 @@
+import { percentileFromNetWorth } from '@/lib/netWorthBenchmarks';
+
 export type Frequency = 'weekly' | 'monthly' | 'annually';
 
 // Reference points used only to scale the "feasibility" meter — not exact statistics,
@@ -127,8 +129,9 @@ export function checkRetirementProgress(input: RetirementCheckInput): Retirement
 }
 
 // --- Net worth scoring ----------------------------------------------------
-// Heuristic, informational-only scoring (no external benchmark data source is
-// available since the app runs fully locally with no database).
+// Individual account scores below are a heuristic (no benchmark data exists for
+// "how big is a typical savings account"). Overall net worth, though, is scored
+// against real published figures — see netWorthBenchmarks.ts.
 
 export type Badge = 'bronze' | 'silver' | 'gold' | 'diamond';
 
@@ -155,9 +158,8 @@ export function scoreLiabilityAccount(amount: number): number {
   return Math.round((10 - logScale(amount, 500_000)) * 10) / 10;
 }
 
-export function scoreNetWorth(netWorth: number): number {
-  if (netWorth <= 0) return 0;
-  return Math.round(logScale(netWorth, 1_000_000) * 10) / 10;
+export function scoreNetWorth(netWorth: number, age?: number | null): number {
+  return percentileFromNetWorth(netWorth, age) / 10;
 }
 
 export function percentileFromScore(score: number): number {
