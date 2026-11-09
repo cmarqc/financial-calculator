@@ -16,7 +16,8 @@ const OUTCOME_LABEL: Record<RetirementOutcome, string> = {
 const OUTCOME_HELP: Record<RetirementOutcome, string> = {
   traditional: 'On track if your current net worth, left to grow, reaches 25x your annual spending by your retirement age.',
   fire: 'Same 25x rule, but checked against the earlier target age you choose for financial independence.',
-  coastFire: 'On track if what you have today will compound on its own — no more contributions needed — into your full FIRE number by your traditional retirement age.',
+  coastFire:
+    'Coast FIRE is the point where you can stop saving and still retire on time. Set the two ages below: the age you stop adding money, and the age you retire.',
 };
 
 export function RetirementTracker() {
@@ -58,6 +59,10 @@ export function RetirementTracker() {
           onChange={(v) => {
             setOutcome(v);
             if (v === 'traditional') setTargetAge(retirementAge);
+            // Coast FIRE needs the two ages to differ, or there are no coasting years
+            // left and the check collapses into the traditional one. Default to "can I
+            // stop contributing today?", the question people actually arrive with.
+            if (v === 'coastFire' && targetAge >= retirementAge) setTargetAge(currentAge);
           }}
           options={(Object.keys(OUTCOME_LABEL) as RetirementOutcome[]).map((value) => ({
             value,
@@ -70,24 +75,54 @@ export function RetirementTracker() {
           <NumberField id="current-age" label="Current age" value={currentAge} onChange={setCurrentAge} min={0} max={100} />
           <NumberField
             id="target-age"
-            label={outcome === 'coastFire' ? 'Check coast status by age' : 'Target retirement age'}
+            label={outcome === 'coastFire' ? 'Age you stop contributing' : 'Target retirement age'}
             value={targetAge}
             onChange={setTargetAge}
             min={currentAge}
-            max={100}
+            max={outcome === 'coastFire' ? retirementAge : 100}
+            helpText={outcome === 'coastFire' ? 'The last age you add money. Use your current age to ask “can I stop today?”' : undefined}
+            tooltip={
+              outcome === 'coastFire'
+                ? 'The age you plan to stop saving for retirement. From here on, your balance grows on its own.'
+                : undefined
+            }
           />
         </div>
 
         {outcome === 'coastFire' && (
-          <NumberField
-            id="retirement-age"
-            label="Traditional retirement age"
-            value={retirementAge}
-            onChange={setRetirementAge}
-            min={targetAge}
-            max={100}
-            tooltip="The age your coasted savings need to grow to the full FIRE number by, without further contributions."
-          />
+          <>
+            <NumberField
+              id="retirement-age"
+              label="Age you retire"
+              value={retirementAge}
+              onChange={setRetirementAge}
+              min={targetAge}
+              max={100}
+              helpText={`Your balance has ${retirementAge - targetAge} year${
+                retirementAge - targetAge === 1 ? '' : 's'
+              } of untouched growth between the two ages.`}
+              tooltip="When you start living off the money. Your balance must reach the full FIRE number by this age with no further contributions."
+            />
+            <div className="rounded-xl border border-[var(--border)] bg-[var(--bg-subtle)] p-4 text-xs leading-relaxed text-[var(--text-muted)]">
+              <p className="mb-2 font-semibold text-[var(--text)]">How this check works</p>
+              <ol className="grid list-decimal gap-1.5 pl-4">
+                <li>
+                  Your net worth grows{continueContributing ? ' (plus your monthly contributions)' : ''} from age{' '}
+                  {currentAge} to age {targetAge} — that’s your <strong className="font-semibold text-[var(--text)]">projected</strong> balance.
+                </li>
+                <li>Contributions stop at age {targetAge}. Nothing goes in after that.</li>
+                <li>
+                  That balance then compounds alone until age {retirementAge}, when it needs to equal your full FIRE
+                  number of {formatCurrency(result.fireNumber, currency)}.
+                </li>
+                <li>
+                  Working backwards, you need{' '}
+                  <strong className="font-semibold text-[var(--text)]">{formatCurrency(result.requiredAmount, currency)}</strong>{' '}
+                  banked by age {targetAge} to coast the rest of the way.
+                </li>
+              </ol>
+            </div>
+          </>
         )}
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -118,8 +153,8 @@ export function RetirementTracker() {
           label="Continue contributing"
           checked={continueContributing}
           onChange={setContinueContributing}
-          tooltip={`Factor in ongoing monthly contributions from now until age ${targetAge}, on top of your current net worth growing. ${
-            outcome === 'coastFire' ? 'Contributions still stop once you reach coast status, as usual.' : ''
+          tooltip={`Factor in ongoing monthly contributions from now until age ${targetAge}, on top of your current net worth growing.${
+            outcome === 'coastFire' ? ` Nothing is added after age ${targetAge} — that’s the point of coasting.` : ''
           }`}
         />
         {continueContributing && (
@@ -153,14 +188,19 @@ export function RetirementTracker() {
             <strong className="tabular-nums text-[var(--text)]">{formatCurrency(result.fireNumber, currency)}</strong>
           </div>
           <div className="flex justify-between gap-3">
-            <span className="text-[var(--text-muted)]">Required by age {outcome === 'coastFire' ? targetAge : targetAge}</span>
+            <span className="text-[var(--text-muted)]">
+              {outcome === 'coastFire' ? `Needed by age ${targetAge} to coast` : `Required by age ${targetAge}`}
+              {outcome === 'coastFire' && (
+                <span className="block text-xs">grows to the full FIRE number by age {retirementAge}</span>
+              )}
+            </span>
             <strong className="tabular-nums text-[var(--text)]">{formatCurrency(result.requiredAmount, currency)}</strong>
           </div>
           <div className="flex justify-between gap-3">
             <span className="text-[var(--text-muted)]">
               Projected at age {targetAge}
               {continueContributing && (
-                <span className="block text-xs">+{formatCurrency(monthlyContribution, currency)}/mo assumed</span>
+                <span className="block text-xs">+{formatCurrency(monthlyContribution, currency)}/mo assumed until then</span>
               )}
             </span>
             <strong className="tabular-nums text-[var(--text)]">{formatCurrency(result.projectedAmount, currency)}</strong>

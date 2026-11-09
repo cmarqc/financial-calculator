@@ -140,6 +140,7 @@ export function NumberField({
   value,
   onChange,
   tooltip,
+  helpText,
   min,
   max,
   step = 1,
@@ -150,6 +151,7 @@ export function NumberField({
   value: number;
   onChange: (value: number) => void;
   tooltip?: string;
+  helpText?: string;
   min?: number;
   max?: number;
   step?: number;
@@ -163,7 +165,7 @@ export function NumberField({
   }, [value, focused]);
 
   return (
-    <FieldShell label={label} htmlFor={id} tooltip={tooltip}>
+    <FieldShell label={label} htmlFor={id} tooltip={tooltip} helpText={helpText}>
       <div className="relative">
         <input
           id={id}
