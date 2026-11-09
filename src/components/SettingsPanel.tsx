@@ -17,7 +17,7 @@ export function SettingsPanel() {
           value={annualIncome ?? 0}
           onChange={(v) => setAnnualIncome(v || null)}
           currency={currency}
-          tooltip="Optional. Powers percentage-based budgeting and scales the feasibility meter to your income."
+          tooltip="Optional. Powers percentage-based budgeting and scales the feasibility meter to your income. Never saved to your browser — it clears when you reload or close the tab."
         />
         <SelectField
           id="currency"
